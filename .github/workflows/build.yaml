@@ -1,0 +1,31 @@
+name: 🧪 Bygg og test
+on:
+  push:
+    branches:
+      - '**'
+      - '!main'
+
+jobs:
+
+  build:
+    name: ⚙️ Maven bygg og test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: GIT checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Java 8
+        uses: actions/setup-java@v1
+        with:
+          java-version: '8'
+
+      - name: Set up Maven
+        uses: navikt/bidrag-maven/setup@v7
+        with:
+          repositories: maven-central=https://repo.maven.apache.org/maven2,github-packages=https://maven.pkg.github.com/navikt/maven-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build with Maven
+        run: mvn install -B -e -Dtest.log.level=WARN -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
