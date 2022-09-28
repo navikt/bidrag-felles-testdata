@@ -1,0 +1,39 @@
+name: 📦 Release
+on:
+  push:
+    branches:
+      - 'main'
+
+env:
+  VERSION: 1.${{ github.run_number }}
+
+jobs:
+
+  build:
+    name: 🏗️ Maven build and release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: GIT checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Java 8
+        uses: actions/setup-java@v1
+        with:
+          java-version: '8'
+
+      - name: Build and test with Maven
+        run: mvn test -B -e -Drevision=${VERSION} -Dtest.log.level=WARN -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+
+      - name: Tag version
+        run: |
+          git config --global user.name "$(git --no-pager log --format=format:'%an' -n 1)" 
+          git config --global user.email "$(git --no-pager log --format=format:'%ae' -n 1)"
+          git remote set-url origin https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+          git tag -a "${VERSION}" -m "Version ${VERSION}"
+          git push origin "${VERSION}"
+
+      - name: Deploy to repository with Maven
+        run: mvn deploy -B -e -Drevision=${VERSION} -Dmaven.wagon.http.pool=false -DskipTests=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
