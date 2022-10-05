@@ -1,26 +1,36 @@
 package no.nav.bidrag.felles.test.data.person;
 
-import static no.nav.bidrag.felles.test.data.time.DateUtils.parseString;
+import static java.util.Arrays.asList;
+import static no.nav.bidrag.felles.test.data.RandomTestData.random;
+import static no.nav.bidrag.felles.test.data.adresse.Adressetype.BOSTEDSADRESSE;
+import static no.nav.bidrag.felles.test.data.adresse.Adressetype.KONTAKTADRESSE;
+import static no.nav.bidrag.felles.test.data.adresse.TestAdresseBuilder.adresse;
+import static no.nav.bidrag.felles.test.data.time.DateUtils.parseDate;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import lombok.Data;
 import no.nav.bidrag.felles.test.data.RandomTestData;
+import no.nav.bidrag.felles.test.data.adresse.Adressetilknytning;
+import no.nav.bidrag.felles.test.data.adresse.AdressetilknytningBuilder;
 import no.nav.bidrag.felles.test.data.adresse.TestAdresse;
 import no.nav.bidrag.felles.test.data.adresse.TestAdresseBuilder;
+import no.nav.bidrag.felles.test.data.navn.NavnBuilder;
+import no.nav.bidrag.felles.test.data.navn.TestNavn;
 import no.nav.bidrag.felles.test.data.time.DateBuilder;
 
 public class TestPersonBuilder {
-    private IdentType identType = IdentTyper.FNR;
+    private List<IdentType> identtyper = asList(IdentTyper.FNR);
+    private int antallAktoerIder = 1;
     private Kjonn kjonn;
     private int alderMin = 25;
     private int alderMax = 80;
     private LocalDate fodtDato;
     private LocalDate dodDato;
-    private String fornavn;
-    private String etternavn;
+    private final List<NavnBuilder> navnhistorikk = new ArrayList<>();
 
     private ForeldreBuilder foreldreBuilder;
     private TestPerson mor;
@@ -30,18 +40,14 @@ public class TestPersonBuilder {
     private Diskresjon diskresjon;
     private Spraak spraak;
 
-    private TestAdresse boadresse;
-    private TestAdresseBuilder boadresseBuilder;
-
-    private TestAdresse postadresse;
-    private TestAdresseBuilder postadresseBuilder;
+    private List<AdressetilknytningBuilder> adresser = new ArrayList<>();
 
     public static TestPersonBuilder person() {
         return new TestPersonBuilder();
     }
 
-    public TestPersonBuilder identType(IdentType identType) {
-        this.identType = identType;
+    public TestPersonBuilder identType(IdentType... identtyper) {
+        this.identtyper = asList(identtyper);
         return this;
     }
 
@@ -60,7 +66,7 @@ public class TestPersonBuilder {
     }
 
     public TestPersonBuilder fodtDato(String fodtDatoStr) {
-        this.fodtDato = parseString(fodtDatoStr);
+        this.fodtDato = parseDate(fodtDatoStr);
         return this;
     }
 
@@ -97,12 +103,24 @@ public class TestPersonBuilder {
     }
 
     public TestPersonBuilder fornavn(String fornavn) {
-        this.fornavn = fornavn;
+        sisteNavn().fornavn(fornavn);
         return this;
     }
 
     public TestPersonBuilder etternavn(String etternavn) {
-        this.etternavn = etternavn;
+        sisteNavn().etternavn(etternavn);
+        return this;
+    }
+
+    private NavnBuilder sisteNavn() {
+        if (navnhistorikk.isEmpty()) {
+            navnhistorikk.add(new NavnBuilder());
+        }
+        return navnhistorikk.get(navnhistorikk.size() - 1);
+    }
+
+    public TestPersonBuilder med(NavnBuilder navn) {
+        navnhistorikk.add(navn);
         return this;
     }
 
@@ -144,26 +162,23 @@ public class TestPersonBuilder {
     }
 
     public TestPersonBuilder boadresse(TestAdresse boadresse) {
-        this.boadresseBuilder = null;
-        this.boadresse = boadresse;
-        return this;
+        return med(new AdressetilknytningBuilder(boadresse, null, BOSTEDSADRESSE));
     }
 
     public TestPersonBuilder boadresse(TestAdresseBuilder adresseBuilder) {
-        this.boadresse = null;
-        this.boadresseBuilder = adresseBuilder;
-        return this;
+        return med(new AdressetilknytningBuilder(null, adresseBuilder, BOSTEDSADRESSE));
     }
 
     public TestPersonBuilder postadresse(TestAdresse boadresse) {
-        this.postadresseBuilder = null;
-        this.postadresse = boadresse;
-        return this;
+        return med(new AdressetilknytningBuilder(boadresse, null, KONTAKTADRESSE));
     }
 
     public TestPersonBuilder postadresse(TestAdresseBuilder adresseBuilder) {
-        this.postadresse = null;
-        this.postadresseBuilder = adresseBuilder;
+        return med(new AdressetilknytningBuilder(null, adresseBuilder, KONTAKTADRESSE));
+    }
+
+    public TestPersonBuilder med(AdressetilknytningBuilder adressetilknytningBuilder) {
+        this.adresser.add(adressetilknytningBuilder);
         return this;
     }
 
@@ -173,52 +188,75 @@ public class TestPersonBuilder {
                 ? this.kjonn
                 : RandomTestData.random().oneOf(Kjonn.class);
 
-        String personIdent = identType.generer(fodtDato, kjonn);
+        List<TestPersonIdent> personidenter = opprettIdenter(kjonn, fodtDato);
 
-        String fornavn = this.fornavn != null
-                ? this.fornavn
-                : NavnListe.randomFornavn(kjonn);
+        List<TestNavn> navnhistorikk = opprettNavnhistorikk(kjonn, fodtDato);
 
-        String etternavn = this.etternavn != null
-                ? this.etternavn
-                : NavnListe.randomEtternavn();
-
-        TestAdresse boadresse = finnAdresse(this.boadresse, this.boadresseBuilder);
-        TestAdresse postadresse = finnAdresse(this.postadresse, this.postadresseBuilder);
+        List<Adressetilknytning> adressehistorikk = opprettAdressehistorikk(fodtDato);
 
         Foreldre foreldre = finnForeldre(
                 new TestPerson(
-                        personIdent,
+                        personidenter,
                         kjonn,
                         fodtDato,
                         dodDato,
-                        fornavn,
-                        etternavn,
+                        navnhistorikk,
                         mor,
                         far,
                         diskresjon,
                         spraak,
-                        boadresse,
-                        postadresse));
+                        adressehistorikk));
 
         TestPerson person = new TestPerson(
-                personIdent,
+                personidenter,
                 kjonn,
                 fodtDato,
                 dodDato,
-                fornavn,
-                etternavn,
+                navnhistorikk,
                 foreldre.getMor(),
                 foreldre.getFar(),
                 diskresjon,
                 spraak,
-                boadresse,
-                postadresse);
+                adressehistorikk);
 
         for (FamilieBuilder familie : familier) {
             familie.get(person);
         }
         return person;
+    }
+
+    private List<TestPersonIdent> opprettIdenter(Kjonn kjonn, LocalDate fodtDato) {
+        ArrayList<TestPersonIdent> identer = new ArrayList<>();
+        Iterator<IdentType> it = identtyper.iterator();
+        while (it.hasNext()) {
+            identer.add(new TestPersonIdent(it.next().generer(fodtDato, kjonn), !it.hasNext(), false));
+        }
+        for (int i = 0; i < antallAktoerIder; i++) {
+            identer.add(new TestPersonIdent(Long.toString(100000000000l + random().nextLong(200000000000l)), i == 0, true));
+        }
+        return identer;
+    }
+
+    private List<TestNavn> opprettNavnhistorikk(Kjonn kjonn, LocalDate fraDato) {
+        if (navnhistorikk.isEmpty()) {
+            return NavnBuilder.lagNavnhistorikk(asList(new NavnBuilder()), kjonn, fraDato);
+        }
+        return NavnBuilder.lagNavnhistorikk(navnhistorikk, kjonn, fraDato);
+    }
+
+    private List<Adressetilknytning> opprettAdressehistorikk(LocalDate fodtDato) {
+        if (adresser.isEmpty()) {
+            List<AdressetilknytningBuilder> adresser = new ArrayList<>();
+            adresser.add(adresse().tilknytning(BOSTEDSADRESSE));
+            LocalDate utflyttingsdato = random().dateBetween(fodtDato.plusYears(18), fodtDato.plusYears(23));
+            if (!utflyttingsdato.isAfter(LocalDate.now())) {
+                adresser.add(adresse()
+                        .tilknytning(BOSTEDSADRESSE)
+                        .fra(utflyttingsdato));
+            }
+            return AdressetilknytningBuilder.lagAdressehistorikk(adresser, fodtDato);
+        }
+        return AdressetilknytningBuilder.lagAdressehistorikk(adresser, fodtDato);
     }
 
     public List<TestPerson> opprett(int antall) {
@@ -227,16 +265,6 @@ public class TestPersonBuilder {
             personer.add(opprett());
         }
         return personer;
-    }
-
-    private static TestAdresse finnAdresse(TestAdresse adresse, TestAdresseBuilder adresseBuilder) {
-        if (adresse != null) {
-            return adresse;
-        }
-        if (adresseBuilder != null) {
-            return adresseBuilder.opprett();
-        }
-        return null;
     }
 
     private Foreldre finnForeldre(TestPerson tmpPerson) {

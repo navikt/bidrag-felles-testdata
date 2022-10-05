@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class TestAdresse {
+    private final Adresseformat format;
     private final String adresselinje1;
     private final String adresselinje2;
     private final String adresselinje3;

@@ -1,22 +1,31 @@
 package no.nav.bidrag.felles.test.data.person;
 
+import static java.util.Collections.unmodifiableList;
+import static java.util.Optional.ofNullable;
+import static no.nav.bidrag.felles.test.data.adresse.Adressetype.BOSTEDSADRESSE;
+import static no.nav.bidrag.felles.test.data.adresse.Adressetype.KONTAKTADRESSE;
+import static no.nav.bidrag.felles.test.data.adresse.Adressetype.OPPHOLDSADRESSE;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import lombok.Data;
 import lombok.ToString;
+import no.nav.bidrag.felles.test.data.PeriodisertTestData;
+import no.nav.bidrag.felles.test.data.adresse.Adressetilknytning;
 import no.nav.bidrag.felles.test.data.adresse.TestAdresse;
+import no.nav.bidrag.felles.test.data.navn.TestNavn;
 
 @Data
 @ToString(exclude = { "mor", "far" })
 public class TestPerson {
-    private final String personIdent;
+    private final List<TestPersonIdent> personidenter;
     private final Kjonn kjonn;
     private final LocalDate fodselsdato;
     private final LocalDate dodDato;
-    private final String fornavn;
-    private final String etternavn;
+    private final List<TestNavn> navnhistorikk;
 
     private final TestPerson mor;
     private final TestPerson far;
@@ -25,35 +34,30 @@ public class TestPerson {
     private final Diskresjon diskresjon;
     private final Spraak spraak;
 
-    private final TestAdresse boadresse;
-    private final TestAdresse postadresse;
+    private final List<Adressetilknytning> adressehistorikk;
 
     public TestPerson(
-            String personIdent,
+            List<TestPersonIdent> personidenter,
             Kjonn kjonn,
             LocalDate fodselsdato,
             LocalDate dodDato,
-            String fornavn,
-            String etternavn,
+            List<TestNavn> navnhistorikk,
             TestPerson mor,
             TestPerson far,
             Diskresjon diskresjon,
             Spraak spraak,
-            TestAdresse boadresse,
-            TestAdresse postadresse) {
+            List<Adressetilknytning> adressehistorikk) {
 
-        this.personIdent = personIdent;
+        this.personidenter = personidenter;
         this.kjonn = kjonn;
         this.fodselsdato = fodselsdato;
         this.dodDato = dodDato;
-        this.fornavn = fornavn;
-        this.etternavn = etternavn;
+        this.navnhistorikk = unmodifiableList(new ArrayList<>(navnhistorikk));
         this.mor = mor;
         this.far = far;
         this.diskresjon = diskresjon;
         this.spraak = spraak;
-        this.boadresse = boadresse;
-        this.postadresse = postadresse;
+        this.adressehistorikk = unmodifiableList(new ArrayList<>(adressehistorikk));
 
         if (mor != null) {
             mor.getBarn().add(this);
@@ -63,8 +67,46 @@ public class TestPerson {
         }
     }
 
-    public String getNavn() {
+    public String getPersonIdent() {
+        return personidenter.stream()
+                .filter(i -> i.isAktiv() && !i.isAktoerId())
+                .findFirst()
+                .map(TestPersonIdent::getIdent)
+                .orElse(null);
+    }
+
+    public String getAktoerid() {
+        return personidenter.stream()
+                .filter(i -> i.isAktiv() && i.isAktoerId())
+                .findFirst()
+                .map(TestPersonIdent::getIdent)
+                .orElse(null);
+    }
+
+    public String getFornavn() {
+        return getNavn().map(TestNavn::getFornavn).orElse(null);
+    }
+
+    public String getEtternavn() {
+        return getNavn().map(TestNavn::getEtternavn).orElse(null);
+    }
+
+    public String getSammensattNavn() {
         return getEtternavn() + ", " + getFornavn();
+    }
+
+    public Optional<TestNavn> getNavn() {
+        return navnhistorikk.stream()
+                .filter(PeriodisertTestData::overlapperMedIdag)
+                .findFirst();
+    }
+
+    public Optional<TestPerson> mor() {
+        return ofNullable(getMor());
+    }
+
+    public Optional<TestPerson> far() {
+        return ofNullable(getFar());
     }
 
     public boolean harBarn() {
@@ -83,5 +125,27 @@ public class TestPerson {
         return forelder1.equals(barn.getFar())
                 ? barn.getMor()
                 : barn.getFar();
+    }
+
+    public TestAdresse getPostadresse() {
+        LocalDate today = LocalDate.now();
+        return getAdressehistorikk()
+                .stream()
+                .filter(a -> KONTAKTADRESSE.equals(a.getType()))
+                .filter(a -> a.overlapperMed(today))
+                .map(Adressetilknytning::getAdresse)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public TestAdresse getBoadresse() {
+        LocalDate today = LocalDate.now();
+        return getAdressehistorikk()
+                .stream()
+                .filter(a -> BOSTEDSADRESSE.equals(a.getType()) || OPPHOLDSADRESSE.equals(a.getType()))
+                .filter(a -> a.overlapperMed(today))
+                .map(Adressetilknytning::getAdresse)
+                .findFirst()
+                .orElse(null);
     }
 }

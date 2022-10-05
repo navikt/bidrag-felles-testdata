@@ -11,14 +11,17 @@ import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isOneOf;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.oneOf;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.junit.Test;
+
+import no.nav.bidrag.felles.test.data.adresse.Adressetilknytning;
 
 public class TestPersonBuilderTest {
 
@@ -34,7 +37,7 @@ public class TestPersonBuilderTest {
 
     @Test
     public void testKjonn() {
-        assertThat(person().opprett().getKjonn(), isOneOf(KVINNE, MANN));
+        assertThat(person().opprett().getKjonn(), is(oneOf(KVINNE, MANN)));
         assertThat(person().kjonn(KVINNE).opprett().getKjonn(), is(equalTo(KVINNE)));
         assertThat(person().kjonn(MANN).opprett().getKjonn(), is(equalTo(MANN)));
     }
@@ -114,5 +117,24 @@ public class TestPersonBuilderTest {
         assertThat(barn.getMor(), is(not(nullValue())));
         assertThat(barn.getMor().getFornavn(), is(equalTo("Kari")));
         assertThat(barn.getMor().getEtternavn(), is(equalTo("Nordmann")));
+    }
+
+    @Test
+    public void testDefaultAdresse() {
+        TestPerson person = person()
+                .alder(24)
+                .opprett();
+
+        List<Adressetilknytning> historikk = person.getAdressehistorikk();
+        assertThat("Person skal ha adressehistorikk",
+                historikk,
+                is(not(nullValue())));
+        assertThat("Person mellom 18 og 23 kan ha flyttet ut."
+                + "Barn 24  og eldre har alltid flyttet ut og har derfor 2 innslag i adressehistorikken",
+                historikk.size(),
+                is(2));
+        assertThat("Aktiv bostedsadresse er siste innslag i historikken",
+                person.getBoadresse(),
+                is(historikk.get(1).getAdresse()));
     }
 }

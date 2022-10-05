@@ -2,6 +2,9 @@ package no.nav.bidrag.felles.test.data;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 public class RandomTestData {
@@ -64,5 +67,11 @@ public class RandomTestData {
 
     public long nextLong(long bound) {
         return Math.abs(random.nextLong()) % bound;
+    }
+
+    public static <T> List<T> shuffle(List<T> list) {
+        List<T> shuffledList = new ArrayList<>(list);
+        Collections.shuffle(shuffledList, random().getRandom());
+        return shuffledList;
     }
 }

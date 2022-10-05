@@ -8,7 +8,7 @@ public enum IdentTyper implements IdentType {
     FNR {
         @Override
         public String generer(LocalDate fodtDato, Kjonn kjonn) {
-            return new IdentBuilder()
+            return new IdentBuffer()
                     .withDate(fodtDato)
                     .withPersonnummer(kjonn, fodtDato.getYear())
                     .toString();
@@ -18,7 +18,7 @@ public enum IdentTyper implements IdentType {
     DNR {
         @Override
         public String generer(LocalDate fodtDato, Kjonn kjonn) {
-            return new IdentBuilder()
+            return new IdentBuffer()
                     .withDate(fodtDato)
                     .increaseDigit(0, 4)
                     .withPersonnummer(kjonn, fodtDato.getYear())
@@ -30,7 +30,7 @@ public enum IdentTyper implements IdentType {
     BNR {
         @Override
         public String generer(LocalDate fodtDato, Kjonn kjonn) {
-            return new IdentBuilder()
+            return new IdentBuffer()
                     .withDate(fodtDato)
                     .increaseDigit(2, 2)
                     .withPersonnummer(kjonn, fodtDato.getYear())
@@ -41,7 +41,7 @@ public enum IdentTyper implements IdentType {
     NPID {
         @Override
         public String generer(LocalDate fodtDato, Kjonn kjonn) {
-            return new IdentBuilder()
+            return new IdentBuffer()
                     .withDate(RandomTestData.random().dateBetween(LocalDate.of(1859, 1, 1), LocalDate.of(2040, 1, 1)))
                     .increaseDigit(2, 2)
                     .withPersonnummer(kjonn, fodtDato.getYear())
@@ -52,7 +52,7 @@ public enum IdentTyper implements IdentType {
     DOLLY {
         @Override
         public String generer(LocalDate fodtDato, Kjonn kjonn) {
-            return new IdentBuilder()
+            return new IdentBuffer()
                     .withDate(fodtDato)
                     .increaseDigit(2, 4)
                     .withPersonnummer(kjonn, fodtDato.getYear())
@@ -63,7 +63,7 @@ public enum IdentTyper implements IdentType {
     TENOR {
         @Override
         public String generer(LocalDate fodtDato, Kjonn kjonn) {
-            return new IdentBuilder()
+            return new IdentBuffer()
                     .withDate(fodtDato)
                     .increaseDigit(2, 8)
                     .withPersonnummer(kjonn, fodtDato.getYear())
@@ -74,7 +74,7 @@ public enum IdentTyper implements IdentType {
     DODFODT {
         @Override
         public String generer(LocalDate fodtDato, Kjonn kjonn) {
-            return new IdentBuilder()
+            return new IdentBuffer()
                     .withDate(fodtDato)
                     .withDodfodtNr(++dodfodtNr)
                     .toString();
@@ -84,7 +84,7 @@ public enum IdentTyper implements IdentType {
     UGYLDIG {
         @Override
         public String generer(LocalDate fodtDato, Kjonn kjonn) {
-            return new IdentBuilder()
+            return new IdentBuffer()
                     .withDate(fodtDato)
                     .withPersonnummer(kjonn, fodtDato.getYear())
                     .set(2, 2, 19)

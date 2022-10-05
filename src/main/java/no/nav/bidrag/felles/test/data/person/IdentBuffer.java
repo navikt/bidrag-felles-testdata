@@ -7,22 +7,22 @@ import java.time.format.DateTimeFormatter;
 
 import no.nav.bidrag.felles.test.data.RandomTestData;
 
-public class IdentBuilder {
+public class IdentBuffer {
     private static final int[] K1_VEKT = { 3, 7, 6, 1, 8, 9, 4, 5, 2 };
     private static final int[] K2_VEKT = { 5, 4, 3, 2, 7, 6, 5, 4, 3, 2 };
     private StringBuffer buffer = new StringBuffer(11);
 
-    public IdentBuilder withDate(LocalDate date) {
+    public IdentBuffer withDate(LocalDate date) {
         buffer.replace(0, 6, DateTimeFormatter.ofPattern("ddMMyy").format(date));
         return this;
     }
 
-    public IdentBuilder increaseDigit(int pos, int increaseBy) {
+    public IdentBuffer increaseDigit(int pos, int increaseBy) {
         buffer.replace(pos, pos + 1, Integer.toString(Integer.parseInt(buffer.substring(pos, pos + 1)) + increaseBy));
         return this;
     }
 
-    public IdentBuilder withPersonnummer(Kjonn kjonn, int fodtAar) {
+    public IdentBuffer withPersonnummer(Kjonn kjonn, int fodtAar) {
         try {
             set(6, 3, randomPersonnummer(kjonn, fodtAar));
             return beregnKontrollsiffer();
@@ -32,7 +32,7 @@ public class IdentBuilder {
         }
     }
 
-    public IdentBuilder withDodfodtNr(int dodfodtNr) {
+    public IdentBuffer withDodfodtNr(int dodfodtNr) {
         set(6, 5, dodfodtNr);
         return this;
     }
@@ -60,13 +60,13 @@ public class IdentBuilder {
                 + (Kjonn.MANN.equals(kjonn) ? 1 : 0);
     }
 
-    public IdentBuilder beregnKontrollsiffer() {
+    public IdentBuffer beregnKontrollsiffer() {
         set(9, 1, kontrollsiffer(K1_VEKT));
         set(10, 1, kontrollsiffer(K2_VEKT));
         return this;
     }
 
-    public IdentBuilder set(int pos, int digits, int value) {
+    public IdentBuffer set(int pos, int digits, int value) {
         buffer.replace(pos, pos + digits, leftPad(digits, Integer.toString(value)));
         return this;
     }

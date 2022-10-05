@@ -1,8 +1,15 @@
 package no.nav.bidrag.felles.test.data.adresse;
 
+import static no.nav.bidrag.felles.test.data.adresse.Adresseformat.UTENLANDSK_ADRESSE;
+import static no.nav.bidrag.felles.test.data.adresse.Adresseformat.UTENLANDSK_ADRESSE_I_FRITT_FORMAT;
+import static no.nav.bidrag.felles.test.data.adresse.Adressetype.BOSTEDSADRESSE;
+import static no.nav.bidrag.felles.test.data.adresse.Adressetype.KONTAKTADRESSE;
+import static no.nav.bidrag.felles.test.data.adresse.Adressetype.OPPHOLDSADRESSE;
+
 import no.nav.bidrag.felles.test.data.RandomTestData;
 
 public class TestAdresseBuilder {
+    private Adresseformat format;
     private String adresselinje1;
     private String adresselinje2;
     private String adresselinje3;
@@ -13,6 +20,11 @@ public class TestAdresseBuilder {
 
     public static TestAdresseBuilder adresse() {
         return new TestAdresseBuilder();
+    }
+
+    public TestAdresseBuilder format(Adresseformat format) {
+        this.format = format;
+        return this;
     }
 
     public TestAdresseBuilder adresselinje1(String adresselinje1) {
@@ -46,6 +58,22 @@ public class TestAdresseBuilder {
         return this;
     }
 
+    public AdressetilknytningBuilder tilknytning(Adressetype type) {
+        return new AdressetilknytningBuilder(null, this, type);
+    }
+
+    public AdressetilknytningBuilder somBosted() {
+        return new AdressetilknytningBuilder(null, this, BOSTEDSADRESSE);
+    }
+
+    public AdressetilknytningBuilder somOppholdsadresse() {
+        return new AdressetilknytningBuilder(null, this, OPPHOLDSADRESSE);
+    }
+
+    public AdressetilknytningBuilder somKontaktadresse() {
+        return new AdressetilknytningBuilder(null, this, KONTAKTADRESSE);
+    }
+
     public TestAdresse opprett() {
 
         String adresselinje1 = this.adresselinje1;
@@ -54,13 +82,13 @@ public class TestAdresseBuilder {
         String poststed = this.poststed;
 
         if (adresselinje1 == null) {
-            adresselinje1 = Land.NORGE.equals(land)
+            adresselinje1 = isNorskAdresse()
                     ? StedListe.randomGatenavn() + " " + RandomTestData.random().nextLong(1000l) + RandomTestData.random().oneOf("", "", "A", "B", "C")
                     : RandomTestData.random().nextLong(2000) + " Weebfoot Street";
         }
 
         if (adresselinje2 == null && postnummer == null && poststed == null) {
-            if (Land.NORGE.equals(land)) {
+            if (isNorskAdresse()) {
                 Poststed postSted = StedListe.randomPostSted();
                 postnummer = postSted.getPostnummer();
                 poststed = postSted.getPoststed();
@@ -70,6 +98,7 @@ public class TestAdresseBuilder {
         }
 
         return new TestAdresse(
+                format,
                 adresselinje1,
                 adresselinje2,
                 adresselinje3,
@@ -77,5 +106,11 @@ public class TestAdresseBuilder {
                 poststed,
                 bolignummer,
                 land);
+    }
+
+    private boolean isNorskAdresse() {
+        return Land.NORGE.equals(land)
+                && !UTENLANDSK_ADRESSE.equals(format)
+                && !UTENLANDSK_ADRESSE_I_FRITT_FORMAT.equals(format);
     }
 }
