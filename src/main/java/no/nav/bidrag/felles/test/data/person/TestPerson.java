@@ -92,7 +92,7 @@ public class TestPerson {
     }
 
     public String getSammensattNavn() {
-        return getEtternavn() + ", " + getFornavn();
+        return getFornavn() + " " + getEtternavn();
     }
 
     public Optional<TestNavn> getNavn() {
